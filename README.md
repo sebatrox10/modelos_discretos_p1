@@ -5,43 +5,44 @@ Este proyecto es una herramienta de gestión de riesgos para proyectos de softwa
 
 El sistema evalúa automáticamente el estado de los proyectos basándose en condiciones lógicas de retraso, errores y solicitudes del cliente, clasificándolos en conjuntos específicos para la toma de decisiones.
 
-## 🏗️ Arquitectura Técnica
-Para cumplir con los requerimientos de ingeniería, el sistema utiliza gestión de memoria dinámica (punteros) y sigue el siguiente flujo:
+## 🏗️ Arquitectura Técnica Implementada (Memoria Dinámica)
+El sistema gestiona la memoria en tiempo de ejecución mediante nodos y punteros, estructurando el flujo en tres fases:
 
-1.  **Cola de Recepción (Queue - FIFO):** Todos los proyectos nuevos ingresan a una cola. Esto garantiza que se procesen en el orden exacto en que llegan.
-2.  **Motor de Inferencia:** Se extraen los proyectos de la cola para evaluar sus proposiciones lógicas ($P$, $Q$, $R$).
-3.  **Gestor de Conjuntos (Linked Lists):** Una vez diagnosticados, los proyectos se almacenan en Listas Enlazadas que representan los conjuntos matemáticos:
-    * **Conjunto A:** Proyectos Activos.
-    * **Conjunto B:** Proyectos con Retraso ($> 10$ días).
-    * **Conjunto C:** Proyectos Completados.
+1. **Cola de Recepción (Queue - FIFO):** Todos los proyectos nuevos ingresan a una cola, garantizando que el procesamiento siga el orden estricto de llegada.
+2. **Motor de Inferencia (Stack - LIFO):** Se extraen los proyectos de la cola y sus proposiciones simples ($P$, $Q$, $R$) se evalúan matemáticamente utilizando una **Pila**. Esto permite resolver reglas lógicas compuestas apilando y desapilando los valores booleanos.
+3. **Gestor de Conjuntos (Linked Lists):** Tras el diagnóstico, los proyectos se enrutan a Listas Enlazadas independientes:
+   * **Conjunto A:** Proyectos Activos.
+   * **Conjunto B:** Proyectos con Retraso ($> 10$ días).
+   * **Conjunto C:** Proyectos Completados.
 
-## 🧠 Modelo Lógico Implementado
+## 🧠 Modelo Lógico Base
 ### Proposiciones Simples
 * **P:** El proyecto tiene más de 10 días de retraso.
 * **Q:** Se han encontrado más de 3 errores críticos activos.
 * **R:** El cliente ha solicitado una revisión urgente.
 
-### Lógica de Predicados (LPPO)
-El sistema está diseñado para realizar auditorías globales mediante cuantificadores:
-* **Universal ($\\\\forall$):** Ejemplo: Verificar si *todos* los proyectos en el Conjunto C están libres de errores.
-* **Existencial ($\\\\exists$):** Ejemplo: Verificar si *existe* al menos un proyecto en riesgo alto que necesite atención inmediata.
+### Inferencias Lógicas Aplicadas
+* **Alerta Crítica:** $Q \land P$
+* **Proyecto Estable:** $\neg P \land \neg Q$
 
-## 🚀 Estado del Primer Commit
-En la versión inicial (`master`), se han implementado los cimientos del proyecto:
-* [x] Definición del `struct Proyecto` con los atributos base.
-* [x] Implementación dinámica de la **Cola de Recepción** (`encolar`/`desencolar`).
-* [x] Funciones de evaluación para las proposiciones simples $P$, $Q$ y $R$.
-* [x] Implementación de **Listas Enlazadas** para la clasificación en conjuntos.
-* [x] Ciclo de procesamiento inicial que mueve datos de la Cola a las Listas según su lógica.
+---
 
-## 🛠️ Instrucciones para el Grupo
-1.  **Compilación:** Utilizar `g++ main.cpp -o sistema`.
-2.  **Continuación:** El siguiente paso es implementar la **Pila (Stack)** para evaluar expresiones compuestas y las funciones de operaciones entre conjuntos (Unión, Intersección, Diferencia).
-3.  **Normas:** Mantener el uso de memoria dinámica y documentar cada nueva regla de inferencia agregada.
-"""
+## 🚀 Estado del Proyecto (Fase 3 Completada)
+Actualmente, la infraestructura principal del sistema está funcional en la rama `main`:
+* [x] Definición de `struct Proyecto` y Nodos.
+* [x] **Cola** de recepción programada y funcional.
+* [x] **Listas enlazadas** programadas para la clasificación $A$, $B$ y $C$.
+* [x] **Pila** de inferencia dinámica integrada en el flujo.
+* [x] Menú interactivo por consola (Opciones 1 al 6).
 
-file_path = "README.md"
-with open(file_path, "w", encoding="utf-8") as f:
-    f.write(readme_content)
+## 🛠️ Tareas Pendientes (Para el resto del equipo)
+Para finalizar el alcance del proyecto, es necesario implementar las siguientes funciones y agregarlas al menú principal:
 
-print(f"Archivo {file_path} generado con éxito.")
+1. **Operaciones de Conjuntos (Funciones entre Listas):**
+   * Intersección ($A \cap B$): Proyectos activos con retraso.
+   * Diferencia ($A - C$): Proyectos en desarrollo.
+   * Unión ($B \cup C$): Proyectos en revisión o finalizados.
+2. **Auditoría con LPPO (Lógica de Predicados):**
+   * Implementar funciones que recorran las listas evaluando el Cuantificador Universal ($\forall$) y Existencial ($\exists$). Ej: Validar que $\forall x \in C, \neg Q(x)$.
+3. **Reporte Final:**
+   * Generar un resumen estadístico (total analizados, alertas, estables).
