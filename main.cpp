@@ -4,7 +4,7 @@
 using namespace std;
 
 // ==========================================
-// 1. MODELO DE DATOS
+// 1. MODELO DE DATOS Y NODOS BASE
 // ==========================================
 struct Proyecto {
     string nombre;
@@ -20,18 +20,11 @@ struct Nodo {
 };
 
 // ==========================================
-// 2. ESTRUCTURAS DE DATOS: COLA Y LISTA
+// 2. ESTRUCTURAS DE DATOS
 // ==========================================
-struct Cola {
-    Nodo* frente = nullptr;
-    Nodo* final = nullptr;
-};
+// --- COLA (FIFO) ---
+struct Cola { Nodo* frente = nullptr; Nodo* final = nullptr; };
 
-struct Lista {
-    Nodo* cabeza = nullptr;
-};
-
-// --- Operaciones de la Cola ---
 void encolar(Cola& c, Proyecto p) {
     Nodo* nuevo = new Nodo{p, nullptr};
     if (c.frente == nullptr) c.frente = nuevo;
@@ -49,52 +42,64 @@ Proyecto desencolar(Cola& c) {
     return p;
 }
 
-// --- Operaciones de la Lista (Conjuntos) ---
+// --- LISTA (CONJUNTOS) ---
+struct Lista { Nodo* cabeza = nullptr; };
+
 void insertarEnLista(Lista& l, Proyecto p) {
     Nodo* nuevo = new Nodo{p, nullptr};
-    if (l.cabeza == nullptr) {
-        l.cabeza = nuevo;
-    } else {
+    if (l.cabeza == nullptr) l.cabeza = nuevo;
+    else {
         Nodo* aux = l.cabeza;
-        while (aux->siguiente != nullptr) {
-            aux = aux->siguiente;
-        }
+        while (aux->siguiente != nullptr) aux = aux->siguiente;
         aux->siguiente = nuevo;
     }
 }
 
 void imprimirLista(Lista l, string nombreConjunto) {
     cout << "\n--- CONJUNTO " << nombreConjunto << " ---\n";
-    if (l.cabeza == nullptr) {
-        cout << "  (Vacio)\n";
-        return;
-    }
+    if (l.cabeza == nullptr) { cout << "  (Vacio)\n"; return; }
     Nodo* aux = l.cabeza;
     while (aux != nullptr) {
-        cout << "  -> " << aux->dato.nombre 
-             << " | Estado: " << aux->dato.estado 
-             << " | Retraso: " << aux->dato.diasRetraso << " dias"
-             << " | Errores: " << aux->dato.erroresCriticos << "\n";
+        cout << "  -> " << aux->dato.nombre << " | Estado: " << aux->dato.estado << "\n";
         aux = aux->siguiente;
     }
 }
 
-// ==========================================
-// 3. FUNCIONES DE LÓGICA PROPOSICIONAL
-// ==========================================
-bool evaluarP(Proyecto p) { return p.diasRetraso > 10; } // P: Mas de 10 dias de retraso
-bool evaluarQ(Proyecto p) { return p.erroresCriticos > 3; } // Q: Mas de 3 errores
-bool evaluarR(Proyecto p) { return p.revisionUrgente; } // R: Revision urgente
+// --- PILA (LIFO) - MOTOR DE INFERENCIA ---
+struct NodoPila {
+    bool valorLogico;
+    NodoPila* siguiente;
+};
+
+struct Pila { NodoPila* cima = nullptr; };
+
+void apilar(Pila& p, bool v) {
+    NodoPila* nuevo = new NodoPila{v, p.cima};
+    p.cima = nuevo;
+}
+
+bool desapilar(Pila& p) {
+    if (p.cima == nullptr) return false;
+    NodoPila* aux = p.cima;
+    bool v = aux->valorLogico;
+    p.cima = p.cima->siguiente;
+    delete aux;
+    return v;
+}
 
 // ==========================================
-// PROGRAMA PRINCIPAL (MENÚ INTERACTIVO)
+// 3. LÓGICA PROPOSICIONAL
+// ==========================================
+bool evaluarP(Proyecto p) { return p.diasRetraso > 10; } 
+bool evaluarQ(Proyecto p) { return p.erroresCriticos > 3; } 
+bool evaluarR(Proyecto p) { return p.revisionUrgente; } 
+
+// ==========================================
+// PROGRAMA PRINCIPAL
 // ==========================================
 int main() {
     Cola colaRecepcion;
-    Lista A; // Activos
-    Lista B; // Con Retraso
-    Lista C; // Completados
-
+    Lista A; Lista B; Lista C;
     int opcion;
 
     do {
@@ -102,10 +107,10 @@ int main() {
         cout << "  SISTEMA DE DIAGNOSTICO - SOFTLOGIC SA\n";
         cout << "========================================\n";
         cout << "1. Ingresar nuevo proyecto a la Cola\n";
-        cout << "2. Procesar Cola (Motor de Inferencia)\n";
-        cout << "3. Ver Conjunto A (Proyectos Activos)\n";
-        cout << "4. Ver Conjunto B (Proyectos con Retraso > 10)\n";
-        cout << "5. Ver Conjunto C (Proyectos Completados)\n";
+        cout << "2. Procesar Cola (Motor de Inferencia con Pila)\n";
+        cout << "3. Ver Conjunto A (Activos)\n";
+        cout << "4. Ver Conjunto B (Retraso > 10)\n";
+        cout << "5. Ver Conjunto C (Completados)\n";
         cout << "6. Salir\n";
         cout << "========================================\n";
         cout << "Seleccione una opcion: ";
@@ -113,60 +118,60 @@ int main() {
 
         if (opcion == 1) {
             Proyecto p;
-            cout << "\nNombre del proyecto (sin espacios): ";
-            cin >> p.nombre;
-            cout << "Estado (Activo/Completado/Revision): ";
-            cin >> p.estado;
-            cout << "Dias de retraso: ";
-            cin >> p.diasRetraso;
-            cout << "Numero de errores criticos: ";
-            cin >> p.erroresCriticos;
-            int rev;
-            cout << "Revision urgente? (1 = Si, 0 = No): ";
-            cin >> rev;
+            cout << "Nombre del proyecto: "; cin >> p.nombre;
+            cout << "Estado (Activo/Completado/Revision): "; cin >> p.estado;
+            cout << "Dias de retraso: "; cin >> p.diasRetraso;
+            cout << "Numero de errores criticos: "; cin >> p.erroresCriticos;
+            int rev; cout << "Revision urgente? (1=Si, 0=No): "; cin >> rev;
             p.revisionUrgente = (rev == 1);
-
             encolar(colaRecepcion, p);
-            cout << "\n[+] Proyecto encolado exitosamente.\n";
+            cout << "[+] Proyecto encolado exitosamente.\n";
 
         } else if (opcion == 2) {
             if (colaRecepcion.frente == nullptr) {
-                cout << "\n[-] La cola esta vacia. No hay proyectos por procesar.\n";
+                cout << "[-] La cola esta vacia.\n";
             } else {
-                cout << "\nProcesando diagnosticos...\n";
+                cout << "\n--- EJECUTANDO MOTOR DE INFERENCIA ---\n";
                 while (colaRecepcion.frente != nullptr) {
                     Proyecto actual = desencolar(colaRecepcion);
-                    cout << "\nEvaluando: " << actual.nombre << "...\n";
+                    cout << "\nEvaluando Proyecto: " << actual.nombre << "\n";
                     
                     bool valP = evaluarP(actual);
+                    bool valQ = evaluarQ(actual);
+                    bool valR = evaluarR(actual);
+
+                    Pila pilaInferencia;
+
+                    // INFERENCIA 1: Riesgo Alto -> Q AND P
+                    apilar(pilaInferencia, valP);
+                    apilar(pilaInferencia, valQ);
+                    bool op1 = desapilar(pilaInferencia); // Saca valQ
+                    bool op2 = desapilar(pilaInferencia); // Saca valP
+                    bool riesgoAlto = (op1 && op2);
                     
-                    // Clasificacion en conjuntos segun logica
-                    if (actual.estado == "Activo") {
-                        insertarEnLista(A, actual);
-                        cout << "  -> Pertenece a Conjunto A (Activos)\n";
-                    } else if (actual.estado == "Completado") {
-                        insertarEnLista(C, actual);
-                        cout << "  -> Pertenece a Conjunto C (Completados)\n";
-                    }
+                    // INFERENCIA 2: Estable -> NOT P AND NOT Q 
+                    apilar(pilaInferencia, !valP);
+                    apilar(pilaInferencia, !valQ);
+                    bool op3 = desapilar(pilaInferencia); // Saca NOT valQ
+                    bool op4 = desapilar(pilaInferencia); // Saca NOT valP
+                    bool estable = (op3 && op4);
 
-                    if (valP) {
-                        insertarEnLista(B, actual);
-                        cout << "  -> Pertenece a Conjunto B (Retrasados)\n";
-                    }
+                    // Resultados de la inferencia
+                    if (riesgoAlto) cout << "  [!] ALERTA CRITICA: Proyecto en riesgo alto (Q AND P).\n";
+                    if (estable) cout << "  [*] ESTADO: Proyecto estable (~P AND ~Q).\n";
+                    if (!riesgoAlto && !estable) cout << "  [-] ESTADO: Proyecto en seguimiento regular.\n";
+
+                    // Clasificacion en Conjuntos
+                    if (actual.estado == "Activo") insertarEnLista(A, actual);
+                    if (actual.estado == "Completado") insertarEnLista(C, actual);
+                    if (valP) insertarEnLista(B, actual);
                 }
-                cout << "\n[+] Procesamiento finalizado.\n";
             }
-
-        } else if (opcion == 3) {
-            imprimirLista(A, "A (Activos)");
-        } else if (opcion == 4) {
-            imprimirLista(B, "B (Con Retraso > 10 dias)");
-        } else if (opcion == 5) {
-            imprimirLista(C, "C (Completados)");
-        }
+        } else if (opcion == 3) imprimirLista(A, "A (Activos)");
+        else if (opcion == 4) imprimirLista(B, "B (Con Retraso > 10 dias)");
+        else if (opcion == 5) imprimirLista(C, "C (Completados)");
 
     } while (opcion != 6);
 
-    cout << "\nSaliendo del sistema...\n";
     return 0;
 }
